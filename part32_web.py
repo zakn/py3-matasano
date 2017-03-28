@@ -7,8 +7,8 @@ from part11 import getkey
 from part28 import SHA1
 from Crypto.Util.strxor import strxor_c
 
-#gkey = getkey(80)
-gkey = b'YELLOW SUBMARINEYELLOW SUBMARINEYELLOW SUBMARINEYELLOW SUBMARINE'
+gkey = getkey(80)
+#gkey = b'YELLOW SUBMARINEYELLOW SUBMARINEYELLOW SUBMARINEYELLOW SUBMARINE'
 blen = 64
 wait = 0.005
 
@@ -45,8 +45,8 @@ class reqHandler(http.server.BaseHTTPRequestHandler):
             q = urllib.parse.parse_qs(urlvars.query)
             sign = binascii.unhexlify(q['signature'][0])
             txt = q['file'][0].encode('utf-8')
-            #truesign = shaHMAC(gkey, txt)
-            truesign = b"d\xbe\x96\x81;\x83'\xc7>#\x12m\xc7\xa0Zb\xb1\xb4\xc6\x86"
+            truesign = shaHMAC(gkey, txt)
+            #truesign = b"d\xbe\x96\x81;\x83'\xc7>#\x12m\xc7\xa0Zb\xb1\xb4\xc6\x86"
 
             if insecure_compare(truesign, sign):
                 #status code
@@ -72,7 +72,7 @@ def run():
  
   # Server settings
   # Choose port 8080, for port 80, which is normally used for a http server, you need root access
-  server_address = ('127.0.0.1', 8081)
+  server_address = ('', 8080)
   httpd = http.server.HTTPServer(server_address, reqHandler)
   print('running server...')
   print(shaHMAC(gkey, b'bargers'))

@@ -7,7 +7,7 @@ import pickle
 def try_sign(filename, signature):
     start = time.time()
     try:
-        response = urllib.request.urlopen('http://localhost:8081/test?file=' + filename + '&signature=' + signature)
+        response = urllib.request.urlopen('http://localhost:8080/test?file=' + filename + '&signature=' + signature)
         end = time.time()
         return (True, end - start)
 
@@ -131,23 +131,35 @@ def next_byte_avgs(known, filename):
         times_avg[i] = avg_handler(times_avg[i], times[i])
     
     file = open('part32_avg', 'wb')
-    print(times_avg)
+    #print(times_avg)
     pickle.dump(times_avg, file)
     file.close()
-    return sum(times)/len(times)
+    #print(times)
+    return sum(times[50:100])/50
+
+
+def backtrack_check(sign, filename, last_avg):
+    reset_file()
+    count = 1
+    while True:
+        current_avg = next_byte_avgs(sign, filename)
+        if (current_avg > (last_avg + 0.001)):
+            return True
+        else:
+            return False
 
 
 
-
-def byte_wrapper(known, filename, last_avg = 0):
+def byte_wrapper(known, filename, last_avg = 0, lastlast_avg = 0):
     reset_file()
   
     #populate the avgs file
-    for i in range(6):
+    for i in range(3):
         current_avg = next_byte_avgs(known, filename)
-        if (current_avg < (last_avg + 0.006)):
+        print(current_avg)
+        if (current_avg < (last_avg + 0.001)):
             print('backtrack to {}'.format(known[:-1]))
-            return (known[:-1], last_avg)
+            return (known[:-1], lastlast_avg, lastlast_avg)
 
     
     #top10 testing
@@ -156,26 +168,38 @@ def byte_wrapper(known, filename, last_avg = 0):
     while (count < 10):
         t10 = test_top10(known, t10, filename)
         count +=1
+    t10 = sorted(t10, key = lambda x: x[1][1], reverse=True)
     print(t10)
-    guess = max(range(10), key = lambda h:t10[h][1][1])
-    return (known + t10[guess][0], current_avg)
+    for k in range(len(t10)):
+        best_guess = t10[k][0]
+        attempt = backtrack_check(known + best_guess, filename, current_avg)
+        if attempt==True:
+            return (known + best_guess, current_avg, last_avg)
+    return (known + best_guess, current_avg, last_avg)
         
 
 def find_sign(filename, known=b'', lavg = 0):
     sign = known
+    llavg = 0
     while len(sign) < 20:
-        result = byte_wrapper(sign, filename, lavg)
+        print(sign)
+        result = byte_wrapper(sign, filename, lavg, llavg)
         print('sign and last avg: {}'.format(result))
-        sign += result[0]
+        sign = result[0]
         lavg = result[1]
+        llavg = result[2]
+        if len(sign)==0:
+            return None
     return sign
 
 
 
 if __name__=='__main__':
     #print(next_byte(b'', 'bargers'))
-    x = find_sign('bargers', b'd\xbe\x96\x81', 1.0467)
+    x = find_sign('bargers', b'')
     print(x)
+
+    #b')t\x0b\xff\xa5\x80\xd4\xc4\xacV\x00\x89t\x91\xda\xc7iC\x05r'
 
     
     
